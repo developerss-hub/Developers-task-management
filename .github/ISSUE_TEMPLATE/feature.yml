@@ -1,0 +1,17 @@
+name: Feature
+description: "Template لإضافة ميزة جديدة"
+title: "[Feature] "
+labels: ["feature", "todo"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## وصف الميزة
+        - 
+
+        ## Acceptance Criteria
+        - 
+
+        ## الملاحظات
+        -
