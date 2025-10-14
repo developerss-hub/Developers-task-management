@@ -1,0 +1,20 @@
+name: Bug
+description: "Template للإبلاغ عن مشكلة"
+title: "[Bug] "
+labels: ["bug", "urgent"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## وصف المشكلة
+        - 
+
+        ## خطوات إعادة إنتاجها
+        - 
+
+        ## النتيجة المتوقعة
+        - 
+
+        ## الملاحظات
+        -
