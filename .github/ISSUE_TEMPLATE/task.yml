@@ -1,0 +1,14 @@
+name: Task
+description: "Template لمهام عامة"
+title: "[Task] "
+labels: ["task", "todo"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## وصف المهمة
+        - 
+
+        ## الملاحظات
+        -
