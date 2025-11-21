@@ -4,121 +4,134 @@
 
 import json
 import os
+import tkinter as tk
+from tkinter import messagebox, simpledialog
 
 TASKS_FILE = "tasks.json"
-tasks = []
 
-# ------------------ File Operations ------------------
+# -------------------- Load / Save Tasks --------------------
 
 def load_tasks():
-    """Load tasks from JSON file if it exists."""
-    global tasks
     if os.path.exists(TASKS_FILE):
         with open(TASKS_FILE, "r", encoding="utf-8") as f:
-            try:
-                tasks = json.load(f)
-            except json.JSONDecodeError:
-                tasks = []
-    else:
-        tasks = []
+            return json.load(f)
+    return []
 
 def save_tasks():
-    """Save all tasks to JSON file."""
     with open(TASKS_FILE, "w", encoding="utf-8") as f:
         json.dump(tasks, f, indent=4, ensure_ascii=False)
 
-# ------------------ Core Functions ------------------
 
-def show_menu():
-    print("\n=== 🧩 Developers Task Management ===")
-    print("1. ➕ Add new task")
-    print("2. 📋 View all tasks")
-    print("3. ✅ Mark task as completed")
-    print("4. 🗑 Delete task")
-    print("5. 🔄 Clear all tasks")
-    print("6. 🚪 Exit")
+# -------------------- Update Progress --------------------
+
+def update_progress():
+    if len(tasks) == 0:
+        progress_var.set(0)
+    else:
+        done_count = sum(1 for t in tasks if t["done"])
+        percent = int((done_count / len(tasks)) * 100)
+        progress_var.set(percent)
+    progress_label.config(text=f"نسبة الإنجاز: {progress_var.get()}%")
+
+
+# -------------------- Refresh List --------------------
+
+def refresh_list():
+    listbox.delete(0, tk.END)
+    for t in tasks:
+        mark = "✔️" if t["done"] else "❌"
+        listbox.insert(tk.END, f"{mark}  {t['title']}")
+    update_progress()
+
+
+# -------------------- Add Task --------------------
 
 def add_task():
-    title = input("Enter task title: ").strip()
-    if not title:
-        print("⚠ Task title cannot be empty.")
+    title = entry.get().strip()
+    if title == "":
+        messagebox.showwarning("تنبيه", "اكتب مهمة!")
         return
-    tasks.append({"title": title, "completed": False})
+
+    tasks.append({"title": title, "done": False})
+    entry.delete(0, tk.END)
     save_tasks()
-    print(f"✅ Task '{title}' added successfully.")
+    refresh_list()
 
-def view_tasks():
-    if not tasks:
-        print("📭 No tasks found.")
-        return
-    print("\nYour Tasks:")
-    for i, task in enumerate(tasks, start=1):
-        status = "✔ Done" if task["completed"] else "❌ Not done"
-        print(f"{i}. {task['title']} - {status}")
 
-def complete_task():
-    view_tasks()
-    if not tasks:
-        return
-    try:
-        num = int(input("\nEnter task number to mark as completed: "))
-        if 1 <= num <= len(tasks):
-            tasks[num - 1]["completed"] = True
-            save_tasks()
-            print("🎯 Task marked as completed!")
-        else:
-            print("⚠ Invalid task number.")
-    except ValueError:
-        print("⚠ Please enter a valid number.")
+# -------------------- Delete Task --------------------
 
 def delete_task():
-    view_tasks()
-    if not tasks:
+    selected = listbox.curselection()
+    if not selected:
+        messagebox.showwarning("تنبيه", "اختار مهمة حتى تحذفها!")
         return
-    try:
-        num = int(input("\nEnter task number to delete: "))
-        if 1 <= num <= len(tasks):
-            deleted = tasks.pop(num - 1)
-            save_tasks()
-            print(f"🗑 Task '{deleted['title']}' deleted.")
-        else:
-            print("⚠ Invalid task number.")
-    except ValueError:
-        print("⚠ Please enter a valid number.")
 
-def clear_all():
-    confirm = input("⚠ Are you sure you want to delete ALL tasks? (y/n): ").lower()
-    if confirm == "y":
-        tasks.clear()
-        save_tasks()
-        print("🧹 All tasks cleared!")
-    else:
-        print("❎ Operation canceled.")
+    index = selected[0]
+    tasks.pop(index)
+    save_tasks()
+    refresh_list()
 
-# ------------------ Main Loop ------------------
 
-def main():
-    load_tasks()
-    print("Welcome back, Developer 👋")
-    while True:
-        show_menu()
-        choice = input("Select an option: ").strip()
-        if choice == "1":
-            add_task()
-        elif choice == "2":
-            view_tasks()
-        elif choice == "3":
-            complete_task()
-        elif choice == "4":
-            delete_task()
-        elif choice == "5":
-            clear_all()
-        elif choice == "6":
-            print("Goodbye 👋 See you later.")
-            break
-        else:
-            print("⚠ Invalid choice, please try again.")
+# -------------------- Toggle Complete --------------------
 
-# ------------------ Run ------------------
-if __name__ == "__main__":
-    main()
+def toggle_task():
+    selected = listbox.curselection()
+    if not selected:
+        messagebox.showwarning("تنبيه", "اختار مهمة!")
+        return
+
+    index = selected[0]
+    tasks[index]["done"] = not tasks[index]["done"]
+    save_tasks()
+    refresh_list()
+
+
+# -------------------- GUI --------------------
+
+root = tk.Tk()
+root.title("To-Do List")
+root.geometry("350x500")
+root.configure(bg="#222")
+
+tasks = load_tasks()
+
+entry = tk.Entry(root, font=("Arial", 14))
+entry.pack(pady=10, padx=10, fill="x")
+
+add_btn = tk.Button(root, text="إضافة مهمة", font=("Arial", 12), command=add_task)
+add_btn.pack(pady=5)
+
+frame = tk.Frame(root)
+frame.pack(pady=10)
+
+listbox = tk.Listbox(frame, width=30, height=12, font=("Arial", 14))
+listbox.pack(side=tk.LEFT)
+
+scroll = tk.Scrollbar(frame, command=listbox.yview)
+scroll.pack(side=tk.RIGHT, fill=tk.Y)
+listbox.config(yscrollcommand=scroll.set)
+
+toggle_btn = tk.Button(root, text="تبديل الإنجاز ✔️❌", font=("Arial", 12), command=toggle_task)
+toggle_btn.pack(pady=5)
+
+delete_btn = tk.Button(root, text="حذف المهمة 🗑️", font=("Arial", 12), command=delete_task)
+delete_btn.pack(pady=5)
+
+progress_var = tk.IntVar()
+progress_label = tk.Label(root, text="نسبة الإنجاز: 0%", font=("Arial", 14), bg="#222", fg="white")
+progress_label.pack(pady=15)
+
+progress_bar = tk.Canvas(root, width=300, height=20, bg="white")
+progress_bar.pack()
+
+def draw_progress(*args):
+    progress_bar.delete("all")
+    percent = progress_var.get()
+    fill_width = 3 * percent
+    progress_bar.create_rectangle(0, 0, fill_width, 20, fill="green")
+
+progress_var.trace("w", draw_progress)
+
+refresh_list()
+
+root.mainloop()
